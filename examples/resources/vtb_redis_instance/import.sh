@@ -1,0 +1,1 @@
+tofu import vtb_redis_instance.new_redis_demo_tf <order_id>

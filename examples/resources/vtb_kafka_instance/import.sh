@@ -1,0 +1,1 @@
+tofu import vtb_kafka_instance.kafka_powere_test2 <order_id>

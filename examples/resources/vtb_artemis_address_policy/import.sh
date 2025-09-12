@@ -1,0 +1,1 @@
+terraform import vtb_artemis_address_policy.test <vtb_artemis_order_id>

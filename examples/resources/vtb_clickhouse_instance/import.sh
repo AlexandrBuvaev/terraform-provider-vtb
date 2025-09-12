@@ -1,0 +1,1 @@
+terraform\tofu import vtb_clickhouse_instance.<resource_name> <order_id>

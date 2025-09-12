@@ -1,0 +1,1 @@
+tofu import vtb_redis_sentinel_instance.redis_sentinel_tf

@@ -1,0 +1,1 @@
+tofu import vtb_airflow_standalone.airflow_stalone <order_id>
