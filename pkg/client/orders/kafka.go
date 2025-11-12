@@ -477,7 +477,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 		return err
 	}
 	var validationErrors []string
-	var allTopics []entities.KafkaACL
 	var byName []entities.KafkaACL
 	var byMask []entities.KafkaACL
 	for _, a := range acls {
@@ -486,8 +485,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 			validationErrors = append(validationErrors, err.Error())
 		} else {
 			switch a.Type {
-			case "all_topics":
-				allTopics = append(allTopics, a)
 			case "by_name":
 				byName = append(byName, a)
 			case "by_mask":
@@ -501,7 +498,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 	// filter input acls
 	var filteredByName []entities.KafkaACL
 	var filteredByMask []entities.KafkaACL
-	var filteredAllTopics []entities.KafkaACL
 	// remove duplicates of acls with type of by_name
 	for _, a := range byName {
 		duplicated := false
@@ -539,19 +535,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 			filteredByMask = append(filteredByMask, a)
 		}
 	}
-	// remove duplicates of acls with type of all_topics
-	for _, a := range allTopics {
-		duplicated := false
-		for i := 0; i < len(filteredAllTopics); i++ {
-			if a.Equal(filteredAllTopics[i]) {
-				duplicated = true
-				break
-			}
-		}
-		if !duplicated {
-			filteredAllTopics = append(filteredAllTopics, a)
-		}
-	}
 	// compare exists and not exists
 	currentACLs, err := o.GetACLs()
 	if err != nil {
@@ -559,11 +542,8 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 	}
 	var currentACLsByName []entities.KafkaACL
 	var currentACLsByMask []entities.KafkaACL
-	var currentACLsAllTopics []entities.KafkaACL
 	for _, a := range currentACLs {
 		switch a.Type {
-		case "all_topics":
-			currentACLsAllTopics = append(currentACLsAllTopics, a)
 		case "by_name":
 			currentACLsByName = append(currentACLsByName, a)
 		case "by_mask":
@@ -573,7 +553,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 
 	var unexistsACLsByName []entities.KafkaACL
 	var unexistsACLsByMask []entities.KafkaACL
-	var unexistsACLsAllTopics []entities.KafkaACL
 	for _, a := range filteredByName {
 		exists := false
 		for _, ca := range currentACLsByName {
@@ -598,22 +577,9 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 			unexistsACLsByMask = append(unexistsACLsByMask, a)
 		}
 	}
-	for _, a := range filteredAllTopics {
-		exists := false
-		for _, ca := range currentACLsAllTopics {
-			if a.Equal(ca) {
-				exists = true
-				break
-			}
-		}
-		if !exists {
-			unexistsACLsAllTopics = append(unexistsACLsAllTopics, a)
-		}
-	}
 
 	unexistsACLs := unexistsACLsByName
 	unexistsACLs = append(unexistsACLs, unexistsACLsByMask...)
-	unexistsACLs = append(unexistsACLs, unexistsACLsAllTopics...)
 	var toCreate []interface{}
 	for _, a := range unexistsACLs {
 		targetACL := map[string]interface{}{
@@ -622,8 +588,6 @@ func (o *Kafka) CreateACLs(acls []entities.KafkaACL, async bool) error {
 			"client_role": a.ClientRole,
 		}
 		switch a.Type {
-		case "all_topics":
-			targetACL["topic_name"] = a.Name
 		case "by_name":
 			targetACL["topic_names"] = a.TopicNames
 
@@ -682,7 +646,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 		return err
 	}
 	var validationErrors []string
-	var allTopics []entities.KafkaACL
 	var byName []entities.KafkaACL
 	var byMask []entities.KafkaACL
 	for _, a := range acls {
@@ -691,8 +654,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 			validationErrors = append(validationErrors, err.Error())
 		} else {
 			switch a.Type {
-			case "all_topics":
-				allTopics = append(allTopics, a)
 			case "by_name":
 				byName = append(byName, a)
 			case "by_mask":
@@ -706,7 +667,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 	// filter input acls
 	var filteredByName []entities.KafkaACL
 	var filteredByMask []entities.KafkaACL
-	var filteredAllTopics []entities.KafkaACL
 	// remove duplicates of acls with type of by_name
 	for _, a := range byName {
 		duplicated := false
@@ -744,19 +704,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 			filteredByMask = append(filteredByMask, a)
 		}
 	}
-	// remove duplicates of acls with type of all_topics
-	for _, a := range allTopics {
-		duplicated := false
-		for i := 0; i < len(filteredAllTopics); i++ {
-			if a.Equal(filteredAllTopics[i]) {
-				duplicated = true
-				break
-			}
-		}
-		if !duplicated {
-			filteredAllTopics = append(filteredAllTopics, a)
-		}
-	}
 	// compare exists and not exists
 	currentACLs, err := o.GetACLs()
 	if err != nil {
@@ -764,11 +711,8 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 	}
 	var currentACLsByName []entities.KafkaACL
 	var currentACLsByMask []entities.KafkaACL
-	var currentACLsAllTopics []entities.KafkaACL
 	for _, a := range currentACLs {
 		switch a.Type {
-		case "all_topics":
-			currentACLsAllTopics = append(currentACLsAllTopics, a)
 		case "by_name":
 			currentACLsByName = append(currentACLsByName, a)
 		case "by_mask":
@@ -778,7 +722,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 
 	var existsACLsByName []entities.KafkaACL
 	var existsACLsByMask []entities.KafkaACL
-	var existsACLsAllTopics []entities.KafkaACL
 	for _, a := range filteredByName {
 		for _, ca := range currentACLsByName {
 			if a.ClientCN == ca.ClientCN && a.ClientRole == ca.ClientRole {
@@ -795,18 +738,9 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 			}
 		}
 	}
-	for _, a := range filteredAllTopics {
-		for _, ca := range currentACLsAllTopics {
-			if a.Equal(ca) {
-				existsACLsAllTopics = append(existsACLsAllTopics, a)
-				break
-			}
-		}
-	}
 
 	existsACLs := existsACLsByName
 	existsACLs = append(existsACLs, existsACLsByMask...)
-	existsACLs = append(existsACLs, existsACLsAllTopics...)
 	var toRemove []interface{}
 	for _, a := range existsACLs {
 		targetACL := map[string]interface{}{
@@ -815,8 +749,6 @@ func (o *Kafka) DeleteACLs(acls []entities.KafkaACL, async bool) error {
 			"client_role": a.ClientRole,
 		}
 		switch a.Type {
-		case "all_topics":
-			targetACL["topic_name"] = a.Name
 		case "by_name":
 			targetACL["topic_names"] = a.TopicNames
 

@@ -26,8 +26,8 @@ type K8sProjectItemConfig struct {
 }
 
 type K8sProjectQuotaData struct {
-	CPU    int `json:"cpu"`
-	Memory int `json:"memory"`
+	CPU    float64 `json:"cpu"`
+	Memory float64 `json:"memory"`
 }
 
 type K8sProjectClusterData struct {

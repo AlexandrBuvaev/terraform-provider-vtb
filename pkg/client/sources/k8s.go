@@ -6,9 +6,9 @@ import (
 	"io"
 	"strconv"
 
+	"terraform-provider-vtb/pkg/client/auth"
 	"terraform-provider-vtb/pkg/client/entities"
 	"terraform-provider-vtb/pkg/client/requests"
-	"terraform-provider-vtb/pkg/client/auth"
 )
 
 func GetK8sGroups(creds *auth.Credentials, projectName string) ([]entities.AccessGroup, error) {
@@ -95,36 +95,37 @@ func GetK8sProjectEnviroment(creds *auth.Credentials, projectName string) (strin
 	return response.Data.ProjectEnvironment.Name, err
 }
 
-func GetK8sIdCluster(
+func GetK8sControlPlane(
 	AccessToken string,
 	projectName string,
-	CPU int64,
-	memory int64,
 	datacenter string,
 	netsegment string,
-	clusterName string,
-) (string, error) {
+	nodes int64,
+	CPU int64,
+	memory int64,
+) ([]entities.K8sPoolResponse, error) {
 
 	params := map[string]string{
-		"category":      "container",
-		"project_name":  projectName,
-		"quota[cpu]":    strconv.FormatInt(CPU, 10),
-		"quota[memory]": strconv.FormatInt(memory, 10),
-		"data_center":   datacenter,
-		"net_segment":   netsegment,
-		"product_name":  "kubernetes_project",
-		"resource_type": "cluster:kubernetes",
+		"category":            "container",
+		"project_name":        projectName,
+		"quota[nodes]":        strconv.FormatInt(nodes, 10),
+		"quota[nodes_cpu]":    strconv.FormatInt(CPU, 10),
+		"quota[nodes_memory]": strconv.FormatInt(memory, 10),
+		"data_center":         datacenter,
+		"net_segment":         netsegment,
+		"product_name":        "kubernetes_space",
+		"resource_type":       "cluster:kubernetes",
 	}
 	uri := "order-service/api/v1/products/resource_pools"
 	resp, err := requests.SendRequest(AccessToken, uri, "GET", nil, params)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	var response struct {
@@ -132,16 +133,9 @@ func GetK8sIdCluster(
 	}
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-
-	for i := range response.List {
-		if response.List[i].Name == clusterName {
-			clusterID := response.List[i].ID
-			return clusterID, nil
-		}
-	}
-	return "", nil
+	return response.List, nil
 }
 
 func GetK8sClusters(
@@ -184,4 +178,29 @@ func GetK8sClusters(
 		return nil, err
 	}
 	return response.List, nil
+}
+
+func GetK8sEnvConfig(creds *auth.Credentials, env string) ([]entities.K8sRatio, error) {
+	var response []entities.K8sRatio
+
+	params := map[string]string{
+		"name__in":        env,
+		"directory__name": "mankube_env_configs",
+	}
+	uri := "references/api/v1/pages/"
+	resp, err := requests.SendRequest(creds.AccessToken, uri, "GET", nil, params)
+	if err != nil {
+		return []entities.K8sRatio{}, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []entities.K8sRatio{}, err
+	}
+	err = json.Unmarshal(body, &response)
+	if err != nil {
+		return []entities.K8sRatio{}, err
+	}
+	return response, nil
 }

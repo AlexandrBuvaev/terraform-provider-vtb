@@ -5,42 +5,48 @@ data "vtb_core_data" "dev" {
   zone        = "msk-north"
 }
 
+data "vtb_flavor_data" "c2m4" {
+  cores  = 2
+  memory = 4
+}
+
 data "vtb_debezium_image_data" "test" {
   distribution = "astra"
   os_version   = "1.7"
 }
 
 data "vtb_cluster_layout" "debezium" {
-  layout      = "one_dc:debezium-1"
+  layout      = "one_dc:debezium-2"
   net_segment = "dev-srv-app"
 }
 
 resource "vtb_sync_xpert_cluster" "test" {
-  lifetime  = 2
-  label     = "TerraformDebezium1"
+  label     = "SyncExpert Astra"
+  financial_project = "VTB.Cloud"
   core      = data.vtb_core_data.dev
-  flavor    = data.vtb_flavor_data.fv
+  flavor    = data.vtb_flavor_data.c2m4
   image     = data.vtb_debezium_image_data.test
   layout_id = data.vtb_cluster_layout.debezium.id
-  financial_project = "VTB.Cloud"
   extra_mounts = {
     "/app" = {
-      size        = 30
+      size = 30
     },
   }
   access = {
     "superuser" = [
-      "cloud-soub-dbzm",
+      "cloud-soub-buvaev",
+      "cloud-soub-chumakovas",
+    ],
+    "user" = [
+      "cloud-soub-buvaev",
     ],
   }
 
-  api_user             = "VTB4096014"
-  api_password         = "{Sq4-[5zP&7pk~Y_B?c<mV=o,.#G-/|r]B/x+M"
-  cluster_group_id     = "dbzm-test"
+  cluster_name = "test-cluster"
+  api_user             = "VTB4115884"
+  api_password         = "btC9ox.B3Ai87EqA02ZXBjbUiWBaswNU4HSTNyySw.zmtCpj"
+  cluster_group_id     = "test"
   debezium_version     = "1.1.0"
-  kafka_server         = "dasoub-kfc179lk.corp.dev.vtb:9092"
-  kafka_cert_cname     = "APD09.26-1482-kafka-da-cluster-a-kafka-astra-0341"
-  config_storage_topic = "dbzm-config-test"
-  offset_storage_topic = "dbzm-offset-test"
-  status_storage_topic = "dbzm-status-test"
+  kafka_server         = "d5soub-kfc005lk.corp.dev.vtb:9092,d5soub-kfc010lk.corp.dev.vtb:9092,d5soub-kfc001lk.corp.dev.vtb:9092,d5soub-kfc009lk.corp.dev.vtb:9092"
+  kafka_cert_cname     = "APD09.26.01.01-1482-kafka-client-syncxpert-d5-test"
 }

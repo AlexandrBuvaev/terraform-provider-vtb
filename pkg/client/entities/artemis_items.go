@@ -80,3 +80,11 @@ func (c OpenMessagingItemConfig) GetProviderType() (string, string) {
 type OpenMessagingItemConfig struct {
 	ArtemisVersion string `json:"artemis_version"`
 }
+
+func (c OpenMessagingLtItemConfig) GetProviderType() (string, string) {
+	return "app", "artemis_lt"
+}
+
+type OpenMessagingLtItemConfig struct {
+	ArtemisVersion string `json:"artemis_version"`
+}

@@ -90,6 +90,15 @@ func GetPostgresqlOrder(creds *auth.Credentials, projectName, orderID string) (*
 	return result.(*PostgresqlOrder), nil
 }
 
+func GetS3CephOrder(creds *auth.Credentials, projectName, orderID string) (*S3CephOrder, error) {
+	orderType := &S3CephOrder{}
+	result, err := getOrder(creds, projectName, orderID, orderType)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*S3CephOrder), nil
+}
+
 func GetEtcdOrder(creds *auth.Credentials, projectName, orderID string) (*EtcdOrder, error) {
 	orderType := &EtcdOrder{}
 	result, err := getOrder(creds, projectName, orderID, orderType)
@@ -159,6 +168,15 @@ func GetK8sProjectOrder(creds *auth.Credentials, projectName, orderID string) (*
 		return nil, err
 	}
 	return result.(*K8sProjectOrder), nil
+}
+
+func GetK8sContainerSpaceOrder(creds *auth.Credentials, projectName, orderID string) (*K8sContainerSpaceOrder, error) {
+	orderType := &K8sContainerSpaceOrder{}
+	result, err := getOrder(creds, projectName, orderID, orderType)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*K8sContainerSpaceOrder), nil
 }
 
 func GetDebeziumOrder(creds *auth.Credentials, projectName, orderID string) (*SyncXpertCluster, error) {
@@ -243,6 +261,15 @@ func GetKTaaSOrder(creds *auth.Credentials, projectName, orderID string) (*KTaaS
 	return result.(*KTaaS), nil
 }
 
+func GetGSLBV1Order(creds *auth.Credentials, projectName, orderID string) (*GSLBV1, error) {
+	orderType := &GSLBV1{}
+	result, err := getOrder(creds, projectName, orderID, orderType)
+	if err != nil {
+		return nil, err
+	}
+	return result.(*GSLBV1), nil
+}
+
 func getOrder(creds *auth.Credentials, projectName, orderID string, orderType interface{}) (interface{}, error) {
 	var order interface{}
 
@@ -311,6 +338,10 @@ func getOrder(creds *auth.Credentials, projectName, orderID string, orderType in
 		order = &K8sProjectOrder{
 			Order: Order{Creds: creds},
 		}
+	case *K8sContainerSpaceOrder:
+		order = &K8sContainerSpaceOrder{
+			Order: Order{Creds: creds},
+		}
 	case *SyncXpertCluster:
 		order = &SyncXpertCluster{
 			Order: Order{Creds: creds},
@@ -335,6 +366,10 @@ func getOrder(creds *auth.Credentials, projectName, orderID string, orderType in
 		order = &TarantoolCluster{
 			Order: Order{Creds: creds},
 		}
+    case *S3CephOrder:
+		order = &S3CephOrder{
+			Order: Order{Creds: creds},
+		}
 	case *RQaaS:
 		order = &RQaaS{
 			Order: Order{Creds: creds},
@@ -349,6 +384,10 @@ func getOrder(creds *auth.Credentials, projectName, orderID string, orderType in
 		}
 	case *ScyllaDbCluster:
 		order = &ScyllaDbCluster{
+			Order: Order{Creds: creds},
+		}
+	case *GSLBV1:
+		order = &GSLBV1{
 			Order: Order{Creds: creds},
 		}
 	default:

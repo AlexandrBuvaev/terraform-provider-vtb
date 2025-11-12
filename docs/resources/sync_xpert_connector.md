@@ -13,22 +13,26 @@ description: |-
 ## Example Usage
 
 ```terraform
-resource "vtb_sync_xpert_connector" "test" {
-  order_id = vtb_sync_xpert_cluster.testd.order_id
-  name              = "pg-soub-da-baza-baza2"
+resource "vtb_sync_xpert_connector" "example" {
+  order_id = vtb_sync_xpert_cluster.test.order_id
+  name     = "pg-soub-d5-testdb-pg-soub-d5-testdb-testdb"
+
   database = {
-    hostname          = "dasoub-pgc159lk.corp.dev.vtb:5432,dasoub-pgc158lk.corp.dev.vtb:5432"
-    name              = "baza"
+    hostname          = "d5soub-pgc001lk.corp.dev.vtb:5432,d5soub-pgc002lk.corp.dev.vtb:5432"
+    name              = "testdb"
     user              = "debezium"
-    password          = "your_super_secret_password_for_technical_user"
-    include_list      = "dbzm"
+    password          = "Dx6T9SMzcNa33HU-gjMyICSZuK4cKHxM4QWA3MIIpBbO8Yx7GH8hD3E-TjpUPKZytxFzF1V7AENBrU"
+    include_list      = "test"
     include_list_type = "schema.include.list"
     publication_name  = "pub_dbzm"
-    slot_name         = "slot"
+    slot_name         = "syncxpert_test"
+    db_topic_prefix = "test"
   }
+
   ssl = {
-    mode = "disable"
+    mode    = "disable"
   }
+
   heartbeat = {
     action_query = "insert into hb_debezium.hb_table (id) values (1)"
     interval_ms  = 60000
@@ -44,8 +48,8 @@ resource "vtb_sync_xpert_connector" "test" {
 
 - `database` (Attributes) (see [below for nested schema](#nestedatt--database))
 - `heartbeat` (Attributes) (see [below for nested schema](#nestedatt--heartbeat))
-- `name` (String) The human-readable name of the connector
-- `order_id` (String) The ID of SyncXpert cluster order.
+- `name` (String) Удобочитаемое название коннектора
+- `order_id` (String) Идентификатор заказа кластера SyncXpert
 - `ssl` (Attributes) (see [below for nested schema](#nestedatt--ssl))
 
 <a id="nestedatt--database"></a>
@@ -53,14 +57,15 @@ resource "vtb_sync_xpert_connector" "test" {
 
 Required:
 
-- `hostname` (String) List (via commas) of the PostgreSQL server cluster in the format `address:port`
-- `include_list` (String) List (via commas) of regular expressions.
-- `include_list_type` (String) List included in tracking - there are 2 types available to choose from: `schema.include.list` and `table.include.list`
-- `name` (String) The name of the database from which the data changes will be transferred
-- `password` (String) PostgreSQL database user password to connect to the database
-- `publication_name` (String) The name of the PostgreSQL publication created to stream changes when using the pgoutput plugin.
-- `slot_name` (String) The name of the PostgreSQL logical replication slot that streams data changes to the Debezium connector.
-- `user` (String) PostgreSQL database user name to connect to the database
+- `db_topic_prefix` (String) Префикс топика базы данных
+- `hostname` (String) Список (через запятую) кластера серверов PostgreSQL в формате `адрес:порт`
+- `include_list` (String) Список (через запятую) регулярных выражений
+- `include_list_type` (String) Список включенный в отслеживание - на выбор доступны 2 типа: `schema.include.list` и `table.include.list`
+- `name` (String) Имя базы данных, из которой будут перенесены изменения данных
+- `password` (String, Sensitive) Пароль пользователя PostgreSQL для подключения к базе данных
+- `publication_name` (String) Название публикации PostgreSQL созданной для потоковой передачи изменений при использовании плагина pg output
+- `slot_name` (String) Имя логического слота репликации PostgreSQL который передает изменения данных в Debezium connector
+- `user` (String) Имя пользователя PostgreSQL для подключения к базе данных
 
 
 <a id="nestedatt--heartbeat"></a>
@@ -68,9 +73,9 @@ Required:
 
 Optional:
 
-- `action_query` (String) Request that is made for heartbeat. Default to: insert into hb_debezium.hb_table (id) values (1)
-- `interval_ms` (Number) Heartbeat operation frequency. Default to: 60000
-- `topic_prefix` (String) The final topic name will be <heartbeat.topics.prefix>.<topic.prefix>. Default to: debezium-heartbeat
+- `action_query` (String) Request that is made for heartbeat. По умолчанию: insert into hb_debezium.hb_table (id) values (1)
+- `interval_ms` (Number) Частота операций Heartbeat По умолчанию: 60000
+- `topic_prefix` (String) Окончательное название топика будет <heartbeat.topics.prefix>.<topic.prefix>. По умолчанию: debezium-heartbeat
 
 
 <a id="nestedatt--ssl"></a>
@@ -78,13 +83,13 @@ Optional:
 
 Required:
 
-- `mode` (String) Whether to use an encrypted connection with PostgreSQL or not.
+- `mode` (String) Следует ли использовать зашифрованное соединение с PostgreSQL или нет
 
 Optional:
 
-- `cert` (String) Full path to the client certificate.
-- `key` (String) Full path to the client certificate key file.
-- `password` (String) Client certificate password.
-- `root_cert` (String) Certificate of a trusted CA.
+- `cert` (String) Полный путь к клиентскому сертификату
+- `key` (String) Полный путь к файлу ключа сертификата клиента
+- `password` (String) Пароль сертификата клиента
+- `root_cert` (String) Сертификат доверенного центра сертификации
 
 

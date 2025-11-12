@@ -9,6 +9,40 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/types"
 
+	"terraform-provider-vtb/internal/client"
+	"terraform-provider-vtb/internal/services/access"
+	agentorchestration "terraform-provider-vtb/internal/services/agent_orchestration"
+	"terraform-provider-vtb/internal/services/airflow"
+	"terraform-provider-vtb/internal/services/astra"
+	balancerv3 "terraform-provider-vtb/internal/services/balancer_v3"
+	"terraform-provider-vtb/internal/services/clickhouse"
+	clusterlayout "terraform-provider-vtb/internal/services/cluster-layout"
+	"terraform-provider-vtb/internal/services/core"
+	"terraform-provider-vtb/internal/services/elasticsearch"
+	"terraform-provider-vtb/internal/services/etcd"
+	"terraform-provider-vtb/internal/services/flavor"
+	"terraform-provider-vtb/internal/services/grafana"
+	gslbv1 "terraform-provider-vtb/internal/services/gslb_v1"
+	k8scluster "terraform-provider-vtb/internal/services/k8s_cluster"
+	k8scontainerproject "terraform-provider-vtb/internal/services/k8s_container_project"
+	k8scontainerspace "terraform-provider-vtb/internal/services/k8s_container_space"
+	k8sproject "terraform-provider-vtb/internal/services/k8s_project"
+	"terraform-provider-vtb/internal/services/kafka"
+	"terraform-provider-vtb/internal/services/ktaas"
+	"terraform-provider-vtb/internal/services/nginx"
+	openmessaging "terraform-provider-vtb/internal/services/open_messaging"
+	"terraform-provider-vtb/internal/services/postgresql"
+	"terraform-provider-vtb/internal/services/rabbitmq"
+	rabbitmquser "terraform-provider-vtb/internal/services/rabbitmq_user"
+	"terraform-provider-vtb/internal/services/redis"
+	redissentinel "terraform-provider-vtb/internal/services/redis_sentinel"
+	"terraform-provider-vtb/internal/services/rqaas"
+	s3ceph "terraform-provider-vtb/internal/services/s3_ceph"
+	scylladb "terraform-provider-vtb/internal/services/scylla-db"
+	syncxpert "terraform-provider-vtb/internal/services/sync-xpert"
+	"terraform-provider-vtb/internal/services/tarantool"
+	vtbartemis "terraform-provider-vtb/internal/services/vtb-artemis"
+	"terraform-provider-vtb/internal/services/wildfly"
 	"terraform-provider-vtb/pkg/client/auth"
 	"terraform-provider-vtb/pkg/client/sources"
 )
@@ -16,20 +50,8 @@ import (
 var _ provider.Provider = &VTBCloudProvider{}
 
 type VTBCloudProvider struct {
-	configured      bool
-	version         string
-	ClientId        string
-	ClientSecret    string
-	ProjectName     string
-	Organization    string
-	Environment     string
-	EnvironmentName string
-	EnvID           string
-	RisCode         string
-	RisID           string
-	EnvPrefix       string
-	RisShortName    string
-	Creds           *auth.Credentials
+	configured bool
+	version    string
 }
 
 func New(version string) func() provider.Provider {
@@ -109,105 +131,102 @@ func (p *VTBCloudProvider) Configure(
 		return
 	}
 
-	p.ProjectName = project.Name
-	p.Organization = project.Organization
-	p.Environment = project.ProjectEnvironment.EnvironmentType
-	p.EnvironmentName = project.ProjectEnvironment.Name
-	p.EnvPrefix = project.EnvironmentPrefix.Name
-	p.EnvID = project.ProjectEnvironment.ID
-	p.RisCode = project.InformationSystem.Code
-	p.EnvPrefix = project.EnvironmentPrefix.Name
-	p.RisShortName = project.InformationSystem.ShortName
-	p.RisID = project.InformationSystem.RisID
-	p.ClientId = config.ClientId.ValueString()
-	p.ClientSecret = config.ClientSecret.ValueString()
-	p.Creds = creds
-
 	p.configured = true
+
+	client := client.NewCloudClient(creds, project)
+
+	resp.DataSourceData = client
+	resp.ResourceData = client
 }
 
 func (p *VTBCloudProvider) Resources(_ context.Context) []func() resource.Resource {
 	return []func() resource.Resource{
 
 		// GIA Products
-		func() resource.Resource { return NewPostgresqlResource(p) },
-		func() resource.Resource { return NewRedisResource(p) },
-		func() resource.Resource { return NewRedisSentinelResource(p) },
-		func() resource.Resource { return NewClickHouseResource(p) },
-		func() resource.Resource { return NewClickHouseClusterResource(p) },
-		func() resource.Resource { return NewEtcdResource(p) },
-		func() resource.Resource { return NewAgentOrchestrationResource(p) },
-		func() resource.Resource { return NewGrafanaResource(p) },
-		func() resource.Resource { return NewElasticSearchResource(p) },
-		func() resource.Resource { return NewScyllaDbClusterResource(p) },
+		func() resource.Resource { return postgresql.NewPostgresqlResource() },
+		func() resource.Resource { return redis.NewRedisResource() },
+		func() resource.Resource { return redissentinel.NewRedisSentinelResource() },
+		func() resource.Resource { return clickhouse.NewClickHouseResource() },
+		func() resource.Resource { return clickhouse.NewClickHouseClusterResource() },
+		func() resource.Resource { return etcd.NewEtcdResource() },
+		func() resource.Resource { return agentorchestration.NewAgentOrchestrationResource() },
+		func() resource.Resource { return grafana.NewGrafanaResource() },
+		func() resource.Resource { return elasticsearch.NewElasticSearchResource() },
+		func() resource.Resource { return scylladb.NewScyllaDbClusterResource() },
+		func() resource.Resource { return s3ceph.NewS3CephResource() },
 
 		// USPA Products
-		func() resource.Resource { return NewAccessGroupResource(p) },
-		func() resource.Resource { return NewComputeResource(p) },
-		func() resource.Resource { return NewKafkaResource(p) },
-		func() resource.Resource { return NewWildflyResource(p) },
-		func() resource.Resource { return NewNginxResource(p) },
-		func() resource.Resource { return NewOpenMessagingResource(p) },
-		func() resource.Resource { return NewAirflowClusterResource(p) },
-		func() resource.Resource { return NewAirflowStandaloneResource(p) },
-		func() resource.Resource { return NewTarantoolClusterResource(p) },
-		func() resource.Resource { return NewRQaaSResource(p) },
-		func() resource.Resource { return NewKTaaSResource(p) },
+		func() resource.Resource { return access.NewAccessGroupResource() },
+		func() resource.Resource { return astra.NewComputeResource() },
+		func() resource.Resource { return kafka.NewKafkaResource() },
+		func() resource.Resource { return wildfly.NewWildflyResource() },
+		func() resource.Resource { return nginx.NewNginxResource() },
+		func() resource.Resource { return openmessaging.NewOpenMessagingResource() },
+		func() resource.Resource { return airflow.NewAirflowClusterResource() },
+		func() resource.Resource { return airflow.NewAirflowStandaloneResource() },
+		func() resource.Resource { return tarantool.NewTarantoolClusterResource() },
+		func() resource.Resource { return rqaas.NewRQaaSResource() },
+		func() resource.Resource { return ktaas.NewKTaaSResource() },
+		func() resource.Resource { return gslbv1.NewGSLBV1Resource() },
 
 		// Balancer v3
 
-		func() resource.Resource { return NewBalancerV3Resource(p) },
+		func() resource.Resource { return balancerv3.NewBalancerV3Resource() },
 
 		// RabbitMQ
-		func() resource.Resource { return NewRabbitMQResource(p) },
-		func() resource.Resource { return NewRabbitMQVhostsResource(p) },
-		func() resource.Resource { return NewRabbitMQUserResource(p) },
+		func() resource.Resource { return rabbitmq.NewRabbitMQResource() },
+		func() resource.Resource { return rabbitmq.NewRabbitMQVhostsResource() },
+		func() resource.Resource { return rabbitmquser.NewRabbitMQUserResource() },
 
 		// VTB Artemis
-		func() resource.Resource { return NewArtemisResource(p) },
-		func() resource.Resource { return NewArtemisTuzResource(p) },
-		func() resource.Resource { return NewArtemisAddresPolicyResource(p) },
-		func() resource.Resource { return NewArtemisRolesResource(p) },
+		func() resource.Resource { return vtbartemis.NewArtemisResource() },
+		func() resource.Resource { return vtbartemis.NewArtemisTuzResource() },
+		func() resource.Resource { return vtbartemis.NewArtemisAddresPolicyResource() },
+		func() resource.Resource { return vtbartemis.NewArtemisRolesResource() },
 
 		// Debezium
-		func() resource.Resource { return NewSyncXpertClusterResource(p) },
-		func() resource.Resource { return NewSyncXpertConnectorResource(p) },
+		func() resource.Resource { return syncxpert.NewSyncXpertClusterResource() },
+		func() resource.Resource { return syncxpert.NewSyncXpertConnectorResource() },
 
 		// K8s Products
-		func() resource.Resource { return NewK8sProjectResource(p) },
-		func() resource.Resource { return NewK8sClusterResource(p) },
+		func() resource.Resource { return k8sproject.NewK8sProjectResource() },
+		func() resource.Resource { return k8scluster.NewK8sClusterResource() },
+		func() resource.Resource { return k8scontainerspace.NewK8sContainerSpaceResource() },
+		func() resource.Resource { return k8scontainerproject.NewK8sSpaceProjectResource() },
 	}
 }
 
 func (p *VTBCloudProvider) DataSources(_ context.Context) []func() datasource.DataSource {
 	return []func() datasource.DataSource{
-		func() datasource.DataSource { return NewClusterProductLayoutDataSource(p) },
-		func() datasource.DataSource { return NewFlavorDataSource(p) },
-		func() datasource.DataSource { return NewUserDataSource(p) },
-		func() datasource.DataSource { return NewCoreDataSource(p) },
-		func() datasource.DataSource { return NewComputeImageDataSource(p) },
-		func() datasource.DataSource { return NewPostgresqlImageDataSource(p) },
-		func() datasource.DataSource { return NewWildflyImageDataSource(p) },
-		func() datasource.DataSource { return NewNginxImageDataSource(p) },
-		func() datasource.DataSource { return NewRedisImageDataSource(p) },
-		func() datasource.DataSource { return NewClickhouseImageDataSource(p) },
-		func() datasource.DataSource { return NewClickhouseClusterImageDataSource(p) },
-		func() datasource.DataSource { return NewOpenMessagingDataSource(p) },
-		func() datasource.DataSource { return NewKafkaImageDataSource(p) },
-		func() datasource.DataSource { return NewRabbitMQImageDataSource(p) },
-		func() datasource.DataSource { return NewArtemisImageDataSource(p) },
-		func() datasource.DataSource { return NewDebeziumImageDataSource(p) },
-		func() datasource.DataSource { return NewBalancerV3ImageDataSource(p) },
-		func() datasource.DataSource { return NewAirflowImageDataSource(p) },
-		func() datasource.DataSource { return NewEtcdImageDataSource(p) },
-		func() datasource.DataSource { return NewAgentOrchestrationImageDataSource(p) },
-		func() datasource.DataSource { return NewGrafanaImageDataSource(p) },
-		func() datasource.DataSource { return NewTarantoolDataGridImageDataSource(p) },
-		func() datasource.DataSource { return NewTarantooEnterpriseImageDataSource(p) },
-		func() datasource.DataSource { return NewRQaaSClusterDataSource(p) },
-		func() datasource.DataSource { return NewRedisSentinelImageDataSource(p) },
-		func() datasource.DataSource { return NewJenkinsAgentSubsystemDataSource(p) },
-		func() datasource.DataSource { return NewElasticSearchImageDataSource(p) },
-		func() datasource.DataSource { return NewScyllaDbClusterImageDataSource(p) },
+		func() datasource.DataSource { return clusterlayout.NewClusterProductLayoutDataSource() },
+		func() datasource.DataSource { return flavor.NewFlavorDataSource() },
+		func() datasource.DataSource { return access.NewUserDataSource() },
+		func() datasource.DataSource { return core.NewCoreDataSource() },
+		func() datasource.DataSource { return astra.NewComputeImageDataSource() },
+		func() datasource.DataSource { return postgresql.NewPostgresqlImageDataSource() },
+		func() datasource.DataSource { return wildfly.NewWildflyImageDataSource() },
+		func() datasource.DataSource { return nginx.NewNginxImageDataSource() },
+		func() datasource.DataSource { return redis.NewRedisImageDataSource() },
+		func() datasource.DataSource { return clickhouse.NewClickhouseImageDataSource() },
+		func() datasource.DataSource { return clickhouse.NewClickhouseClusterImageDataSource() },
+		func() datasource.DataSource { return openmessaging.NewOpenMessagingDataSource() },
+		func() datasource.DataSource { return kafka.NewKafkaImageDataSource() },
+		func() datasource.DataSource { return rabbitmq.NewRabbitMQImageDataSource() },
+		func() datasource.DataSource { return vtbartemis.NewArtemisImageDataSource() },
+		func() datasource.DataSource { return syncxpert.NewDebeziumImageDataSource() },
+		func() datasource.DataSource { return balancerv3.NewBalancerV3ImageDataSource() },
+		func() datasource.DataSource { return airflow.NewAirflowImageDataSource() },
+		func() datasource.DataSource { return etcd.NewEtcdImageDataSource() },
+		func() datasource.DataSource { return agentorchestration.NewAgentOrchestrationImageDataSource() },
+		func() datasource.DataSource { return grafana.NewGrafanaImageDataSource() },
+		func() datasource.DataSource { return tarantool.NewTarantoolDataGridImageDataSource() },
+		func() datasource.DataSource { return tarantool.NewTarantooEnterpriseImageDataSource() },
+		func() datasource.DataSource { return rqaas.NewRQaaSClusterDataSource() },
+		func() datasource.DataSource { return redissentinel.NewRedisSentinelImageDataSource() },
+		func() datasource.DataSource { return agentorchestration.NewJenkinsAgentSubsystemDataSource() },
+		func() datasource.DataSource { return elasticsearch.NewElasticSearchImageDataSource() },
+		func() datasource.DataSource { return scylladb.NewScyllaDbClusterImageDataSource() },
+		func() datasource.DataSource { return s3ceph.NewS3CephImageDataSource() },
+		func() datasource.DataSource { return gslbv1.NewGSLBV1ImageDataSource() },
 	}
 }

@@ -24,6 +24,11 @@ type K8sClusterReferenceResponseRatio struct {
 	Data K8sClusterRatioData `json:"data"`
 }
 
+type K8sSpaceReferenceResponse struct {
+	ReferenceResponse
+	Data K8sSpaceImageData `json:"data"`
+}
+
 type K8sProjectImageData struct {
 	ProductId      string `json:"product_id"`
 	DefaultIngress string `json:"default_ingress"`
@@ -54,6 +59,13 @@ type K8sClusterCPDefaults struct {
 	Size   int64  `json:"size"`
 	Flavor string `json:"flavor"`
 	Role   string `json:"role"`
+}
+
+type K8sSpaceImageData struct {
+	ProductId           string `json:"product_id"`
+	RegionIngressAddMax int64  `json:"region_ingress_add_max"`
+	RegionAddNodesMax   int64  `json:"region_add_nodes_max"`
+	IngressAddNodesMax  int64  `json:"ingress_add_nodes_max"`
 }
 
 func GetK8sProjectImageData(creds *auth.Credentials, organization, enviroment string) (*K8sProjectImageData, error) {
@@ -162,4 +174,41 @@ func GetK8sClusterRatioData(creds *auth.Credentials, netSegment, version string)
 		ContainerMemoryRatio: referencedata[0].Data.ContainerMemoryRatio,
 	}
 	return &ratio, nil
+}
+
+func GetK8sSpaceImageData(creds *auth.Credentials, organization, enviroment string) (*K8sSpaceImageData, error) {
+
+	tags := fmt.Sprintf(
+		"k8s,space,%s,%s",
+		strings.ToLower(organization),
+		strings.ToLower(enviroment),
+	)
+
+	parameters := map[string]string{"tags": tags}
+	body, err := getReferenceData(creds.AccessToken, "terraform", parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	terraformOsData := make([]K8sSpaceReferenceResponse, 1)
+	err = json.Unmarshal(body, &terraformOsData)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(terraformOsData) == 0 {
+		return nil, errors.New("can't find data from reference about image")
+	}
+
+	if terraformOsData[0].Data.ProductId == "" {
+		return nil, errors.New("can't find product with this parameters")
+	}
+
+	image := K8sSpaceImageData{
+		ProductId:           terraformOsData[0].Data.ProductId,
+		RegionAddNodesMax:   terraformOsData[0].Data.RegionAddNodesMax,
+		IngressAddNodesMax:  terraformOsData[0].Data.IngressAddNodesMax,
+		RegionIngressAddMax: terraformOsData[0].Data.RegionIngressAddMax,
+	}
+	return &image, nil
 }

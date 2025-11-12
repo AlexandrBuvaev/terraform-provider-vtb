@@ -40,6 +40,9 @@ data "vtb_cluster_layout" "kafka" {
 ### Required
 
 - `layout` (String) String represent cluster layout. Example: `kafka-2:zookeeper-2`.
+
+### Optional
+
 - `net_segment` (String) Network segment name of order.
 
 ### Read-Only

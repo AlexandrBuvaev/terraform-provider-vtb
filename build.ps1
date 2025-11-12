@@ -3,7 +3,7 @@ $HOSTNAME = "vtb"
 $NAMESPACE = "vtb-cloud"
 $NAME = "vtb"
 $BINARY = "terraform-provider-${NAME}"
-$VERSION = "2.16.0"
+$VERSION = "2.18.0"
 $OS_ARCH = "windows_amd64"
 
 # Аналог grep для PowerShell

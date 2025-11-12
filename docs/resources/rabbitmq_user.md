@@ -24,14 +24,11 @@ resource "vtb_rabbitmq_vhosts" "vhost_list" {
 resource "vtb_rabbitmq_user" "user" {
   rabbitmq_order_id = vtb_rabbitmq_cluster.name.order_id
   username          = "1234-rbmq-d5-client-buvaev"
-  vhosts_access = [
-    {
-      username        = "1234-rbmq-d5-client-buvaev"
-      vhost_read      = ["vhost1"]
-      vhost_write     = ["vhost1"]
-      vhost_configure = ["vhost1", "vhost2"]
-    }
-  ]
+  vhosts_access = {
+    vhost_read      = ["vhost1"]
+    vhost_write     = ["vhost1"]
+    vhost_configure = ["vhost1", "vhost2"]
+  }
 }
 ```
 
@@ -45,14 +42,10 @@ resource "vtb_rabbitmq_user" "user" {
 
 ### Optional
 
-- `vhosts_access` (Attributes List) (see [below for nested schema](#nestedatt--vhosts_access))
+- `vhosts_access` (Attributes) Права пользователя на виртуальные хосты (see [below for nested schema](#nestedatt--vhosts_access))
 
 <a id="nestedatt--vhosts_access"></a>
 ### Nested Schema for `vhosts_access`
-
-Required:
-
-- `username` (String) Имя пользователя, которому будут предоставлены доступы к вирутальным хостам.
 
 Optional:
 
@@ -60,4 +53,10 @@ Optional:
 - `vhost_read` (Set of String) Список вирутальных хостов (vhosts) с правами на чтение для пользователя.
 - `vhost_write` (Set of String) Спико виртуальных хостов (vhosts) с правами на запись для пользователя
 
+## Import
 
+Import is supported using the following syntax:
+
+```shell
+tofu import vtb_rabbitmq_user.test_user <order_id>/<username>
+```

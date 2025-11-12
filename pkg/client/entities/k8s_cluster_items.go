@@ -18,46 +18,47 @@ type K8sClusterConfig struct {
 	ContainerCPURatio    int64                          `json:"container_cpu_ratio"`
 	ContainerMemoryRatio int64                          `json:"container_memory_ratio"`
 	Flavor               K8sClusterConfigFlavor         `json:"flavor"`
-	Regions              []K8sClusterConfigRegions      `json:"regions"`
+	Regions              []K8sConfigRegion              `json:"regions"`
 	Features             K8sClusterConfigFeatures       `json:"features"`
 	Components           K8sClusterConfigComponents     `json:"components"`
 	ControlPlane         []K8sClusterConfigControlPlane `json:"control_plane"`
-	Ingress              []K8sClusterConfigIngress      `json:"ingress_shards"`
+	Ingress              []K8sConfigIngress             `json:"ingress_shards"`
 	Products             []string                       `json:"products"`
+	GslbOnly             *bool                          `json:"gslb_only,omitempty" tfsdk:"gslb_only"`
 }
 
 type K8sClusterConfigFlavor struct {
-	Lb         K8sClusterConfigNodeFlavor `json:"lb"`
-	Infra      K8sClusterConfigNodeFlavor `json:"infra"`
-	Master     K8sClusterConfigNodeFlavor `json:"master"`
-	Monitoring K8sClusterConfigNodeFlavor `json:"monitoring"`
+	Lb         K8sConfigNodeFlavor `json:"lb"`
+	Infra      K8sConfigNodeFlavor `json:"infra"`
+	Master     K8sConfigNodeFlavor `json:"master"`
+	Monitoring K8sConfigNodeFlavor `json:"monitoring"`
 }
 
-type K8sClusterConfigRegions struct {
+type K8sConfigRegion struct {
 	// VMs                  []K8sClusterConfigVM               `json:"vms"`
-	Name                 string                             `json:"name"`
-	Size                 int64                              `json:"size"`
-	Flavor               K8sClusterConfigNodeFlavor         `json:"flavor"`
-	IsCodes              []string                           `json:"iscodes"`
-	PodCPUMax            int64                              `json:"pod_cpu_max"`
-	PodMemoryMax         int64                              `json:"pod_memory_max"`
-	ContainerCPURatio    int64                              `json:"container_cpu_ratio"`
-	ContainerMemoryRatio int64                              `json:"container_memory_ratio"`
-	Components           *K8sClusterConfigRegionsComponents `json:"components"`
+	Name                 string                     `json:"name"`
+	Size                 int64                      `json:"size"`
+	Flavor               K8sConfigNodeFlavor        `json:"flavor"`
+	IsCodes              []string                   `json:"iscodes"`
+	PodCPUMax            int64                      `json:"pod_cpu_max"`
+	PodMemoryMax         int64                      `json:"pod_memory_max"`
+	ContainerCPURatio    int64                      `json:"container_cpu_ratio"`
+	ContainerMemoryRatio int64                      `json:"container_memory_ratio"`
+	Components           *K8sConfigRegionComponents `json:"components"`
 }
 
 // type K8sClusterConfigVM struct {
 // 	Hostname string `json:"hostname"`
 // }
 
-type K8sClusterConfigNodeFlavor struct {
+type K8sConfigNodeFlavor struct {
 	Cpus   int64  `json:"cpus"`
 	Name   string `json:"name"`
 	UUID   string `json:"uuid"`
 	Memory int64  `json:"memory"`
 }
 
-type K8sClusterConfigRegionsComponents struct {
+type K8sConfigRegionComponents struct {
 	Astrom       bool `json:"astrom"`
 	TsamOperator bool `json:"tsam_operator"`
 	ChaosMesh    bool `json:"chaos_mesh"`
@@ -122,35 +123,35 @@ type K8sClusterConfigIstioCPOptions struct {
 }
 
 type K8sClusterConfigControlPlane struct {
-	Size     int64                      `json:"size"`
-	Flavor   K8sClusterConfigNodeFlavor `json:"flavor"`
-	RoleName string                     `json:"role_name"`
+	Size     int64               `json:"size"`
+	Flavor   K8sConfigNodeFlavor `json:"flavor"`
+	RoleName string              `json:"role_name"`
 }
 
-type K8sClusterConfigIngress struct {
-	Name           string                           `json:"name"`
-	Size           int64                            `json:"size"`
-	Flavor         K8sClusterConfigNodeFlavor       `json:"flavor"`
-	IsCodes        []string                         `json:"iscodes"`
-	Features       *K8sClusterConfigIngressFeatures `json:"features"`
-	TcpUdpSettings []K8sClusterConfigIngressTcpUdp  `json:"tcp_udp_settings"`
+type K8sConfigIngress struct {
+	Name           string                    `json:"name"`
+	Size           int64                     `json:"size"`
+	Flavor         K8sConfigNodeFlavor       `json:"flavor"`
+	IsCodes        []string                  `json:"iscodes"`
+	Features       *K8sConfigIngressFeatures `json:"features"`
+	TcpUdpSettings []K8sConfigIngressTcpUdp  `json:"tcp_udp_settings"`
 }
 
-type K8sClusterConfigIngressFeatures struct {
+type K8sConfigIngressFeatures struct {
 	Http2Protocol bool `json:"http2_protocol"`
 	ProxyProtocol bool `json:"proxy_protocol"`
 }
 
-type K8sClusterConfigIngressTcpUdp struct {
+type K8sConfigIngressTcpUdp struct {
 	Mode    string `json:"mode"`
 	Port    int64  `json:"port"`
 	Service string `json:"service"`
 }
 
 type WorkerIngressK8sCluster struct {
-	Size    int64                      `json:"size"`
-	Flavor  K8sClusterConfigNodeFlavor `json:"flavor"`
-	IsCodes []string                   `json:"iscodes"`
+	Size    int64               `json:"size"`
+	Flavor  K8sConfigNodeFlavor `json:"flavor"`
+	IsCodes []string            `json:"iscodes"`
 }
 
 type VersionK8sCluster struct {

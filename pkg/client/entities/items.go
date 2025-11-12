@@ -137,6 +137,16 @@ func (i *Item) UnmarshalJSON(data []byte) (err error) {
 		return
 	}
 
+	if (i.Type == "container_space") && (i.Data.Provider == "kubernetes") {
+		var k8sContainerSpaceConfig K8sContainerSpaceConfig
+		err = json.Unmarshal(rawData.Data.Config, &k8sContainerSpaceConfig)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = k8sContainerSpaceConfig
+		return
+	}
+
 	if (i.Type == "app") && i.Data.Provider == "wildfly" {
 		var wildFlyConfig WildflyItemConfig
 		err = json.Unmarshal(rawData.Data.Config, &wildFlyConfig)
@@ -277,6 +287,16 @@ func (i *Item) UnmarshalJSON(data []byte) (err error) {
 		i.Data.Config = omConfig
 		return
 	}
+	// OpenMessaging Astra LT
+	if (i.Type == "app") && (i.Data.Provider == "artemis_lt") {
+		var omConfig OpenMessagingLtItemConfig
+		err = json.Unmarshal(rawData.Data.Config, &omConfig)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = omConfig
+		return
+	}
 
 	if (i.Type == "cluster") && (i.Data.Provider == "debezium") {
 		var debeziumConfig SyncXpertItemConfig
@@ -383,6 +403,7 @@ func (i *Item) UnmarshalJSON(data []byte) (err error) {
 		i.Data.Config = elasticSearchConfig
 		return
 	}
+
 	if (i.Type == "cluster") && (i.Data.Provider == "scylladb") {
 		var scylladbclusterConfig ScyllaDbClusterItemConfig
 		err = json.Unmarshal(rawData.Data.Config, &scylladbclusterConfig)
@@ -390,6 +411,62 @@ func (i *Item) UnmarshalJSON(data []byte) (err error) {
 			return err
 		}
 		i.Data.Config = scylladbclusterConfig
+		return
+	}
+
+	if i.Type == "cluster" && (i.Data.Provider == "balancer") {
+		return
+	}
+
+	if i.Type == "gslb_record" && (i.Data.Provider == "v1_1") {
+		return
+	}
+
+	if (i.Type == "s3") && (i.Data.Provider == "ceph") {
+		var tenantConfig S3CephTenantItemConfig
+		err = json.Unmarshal(rawData.Data.Config, &tenantConfig)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = tenantConfig
+		return
+	}
+
+	if (i.Type == "s3_bucket") && (i.Data.Provider == "ceph") {
+		var bucketConfig S3CephBucketItemConfig
+		err = json.Unmarshal(rawData.Data.Config, &bucketConfig)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = bucketConfig
+		return
+	}
+
+	if (i.Type == "cluster") && (strings.Contains(i.Data.Provider, "gslb_cluster_v1")) {
+		var GSLBV1 GSLBV1Item
+		err = json.Unmarshal(data, &GSLBV1)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = GSLBV1.Data
+		return
+	}
+
+	if (i.Type == "gslb") && (i.Data.Provider == "app_info") {
+		var GSLBAppInfoConfig GSLBAppItemConfig
+		err = json.Unmarshal(rawData.Data.Config, &GSLBAppInfoConfig)
+		if err != nil {
+			return err
+		}
+		i.Data.Config = GSLBAppInfoConfig
+		return
+	}
+
+	if i.Type == "gslb" && (i.Data.Provider == "anycast") {
+		return
+	}
+
+	if i.Type == "gslb" && (i.Data.Provider == "bgpaas") {
 		return
 	}
 

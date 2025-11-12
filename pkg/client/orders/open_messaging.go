@@ -29,6 +29,7 @@ type OpenMessagingAttrs struct {
 	Platform         string              `json:"platform"`
 	OnSupport        bool                `json:"on_support"`
 	OsVersion        string              `json:"os_version"`
+	ClientDn         *string             `json:"clientdn,omitempty"`
 
 	AdminGroups     []string `json:"admin_groups"`
 	SuperuserGroups []string `json:"superuser_groups"`
@@ -99,7 +100,7 @@ func (o *OpenMessagingOrder) Create(p CreateOrderPayload) error {
 	return nil
 }
 
-func (o *OpenMessagingOrder) VerticalScaling(attrs OpenMessagingVerticalScalingAttrs) error {
+func (o *OpenMessagingOrder) VerticalScaling(attrs OpenMessagingVerticalScalingAttrs, envName string) error {
 
 	itemID, err := o.GetParentItemID()
 	if err != nil {
@@ -128,7 +129,13 @@ func (o *OpenMessagingOrder) VerticalScaling(attrs OpenMessagingVerticalScalingA
 		return err
 	}
 
-	uri := o.generateOrderdActionUri("openmessaging_vertical_scaling_release")
+	var uri string
+	if strings.EqualFold(envName, "lt") {
+		uri = o.generateOrderdActionUri("openmessaging_lt_vertical_scaling")
+	} else {
+		uri = o.generateOrderdActionUri("openmessaging_vertical_scaling_release")
+	}
+
 	_, err = requests.SendRequest(o.Creds.AccessToken, uri, "PATCH", payload, nil)
 	if err != nil {
 		return err

@@ -474,9 +474,8 @@ func (o *RabbitMQ) DeleteVhostAccess(access entities.RabbitMQVhostAccess) error 
 	}
 
 	attrsData := map[string]interface{}{
-		"user_name":   access.UserName,
-		"vhost_name":  access.VhostName,
-		"permissions": access.Permissions,
+		"user_name":  access.UserName,
+		"vhost_name": access.VhostName,
 	}
 
 	data := map[string]interface{}{

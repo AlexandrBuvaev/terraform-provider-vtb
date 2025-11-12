@@ -468,3 +468,43 @@ func (o *Order) GetVMAcls() ([]entities.AccessACL, error) {
 
 	return vmAcls, nil
 }
+
+func (o *Order) GetActiveProjectItems() ([]entities.Item, error) {
+
+	created, err := o.itemCreated()
+	if err != nil {
+		return nil, err
+	}
+
+	var items []entities.Item
+	if created {
+		for _, item := range o.Data {
+			if item.Type == "project" && item.Data.State == "on" {
+				items = append(items, item)
+			}
+		}
+	}
+
+	if len(items) == 0 {
+		return nil, errors.New("can't find items with type 'proect'")
+	}
+	return items, nil
+}
+
+func (o *Order) WaitLastActionEnded(timeout int64) error {
+
+	for {
+		actionStatus, err := o.GetLastActionStatus()
+		if err != nil {
+			return err
+		}
+
+		if isPending(actionStatus) || isNew(actionStatus) {
+			log.Printf("\nOrder action status: still pending...")
+			time.Sleep(time.Duration(timeout) * time.Second)
+		} else {
+			break
+		}
+	}
+	return nil
+}

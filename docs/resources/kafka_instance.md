@@ -118,6 +118,7 @@ resource "vtb_kafka_instance" "kafka_powere_test2" {
 ### Read-Only
 
 - `build_version` (String) Версия облачной сборки продукта.
+- `connection_url` (String) Connection URL
 - `item_id` (String) Идентификатор элемента ВМ в заказе. (становиться известен после создания заказа.)
 - `order_id` (String) Идентификатор заказа (известен после создания заказа).
 

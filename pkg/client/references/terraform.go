@@ -1549,3 +1549,57 @@ func GetElasticSearchImageData(
 		GeoDistribution: terraformOsData[0].Data.GeoDistribution,
 	}, nil
 }
+
+type S3CephImageData struct {
+	ProductID       string `json:"product_id"`
+	Organization    string `json:"organization"`
+	Environment     string `json:"environment"`
+	StorageType     string `json:"storage_type"`
+}
+
+type S3CephReferenceResponse struct {
+	ReferenceResponse
+	Data S3CephImageData `json:"data"`
+}
+
+func GetS3CephImageData(
+	creds *auth.Credentials,
+	organization,
+	environment string,
+) (*S3CephImageData, error) {
+
+	tags := fmt.Sprintf(
+		"%s,%s,%s",
+		"s3",
+		strings.ToLower(organization),
+		strings.ToLower(environment),
+	)
+
+	parameters := map[string]string{"tags__contains": tags}
+	body, err := getReferenceData(creds.AccessToken, "terraform", parameters)
+	if err != nil {
+		return nil, err
+	}
+
+	terraformOsData := make([]S3CephReferenceResponse, 1)
+	err = json.Unmarshal(body, &terraformOsData)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(terraformOsData) == 0 {
+		return nil, fmt.Errorf("can't find page in reference `terraform` with tags=%s", tags)
+	}
+	if terraformOsData[0].Data.ProductID == "" {
+		return nil, fmt.Errorf("can't find product_id in reference `terraform` with tags=%s", tags)
+	}
+
+	return &S3CephImageData{
+        ProductID:    terraformOsData[0].Data.ProductID,
+        Environment:  environment,
+        Organization: organization,
+
+		StorageType:  terraformOsData[0].Data.StorageType,
+	}, nil
+}
+

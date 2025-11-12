@@ -71,6 +71,7 @@ resource "vtb_postgresql_instance" "name" {
 
 - `core` (Attributes) Core parameters for VM and order. (see [below for nested schema](#nestedatt--core))
 - `extra_mounts` (Attributes Map) Added extra mounts in compute instance. (see [below for nested schema](#nestedatt--extra_mounts))
+- `financial_project` (String) Financial source for order.
 - `flavor` (Attributes) Core/memory of compute instance. (see [below for nested schema](#nestedatt--flavor))
 - `image` (Attributes) Type of Postgresql instance (see [below for nested schema](#nestedatt--image))
 - `label` (String) Label of order.
@@ -80,7 +81,6 @@ resource "vtb_postgresql_instance" "name" {
 - `access` (Map of Set of String) Map, where key is role and value is list of groups, which will grant access for Active Directory login
 - `db_users` (Attributes Map) List of users to add to postgresql (see [below for nested schema](#nestedatt--db_users))
 - `dbs` (Attributes Map) List of dbs to create on postgresql instance (see [below for nested schema](#nestedatt--dbs))
-- `financial_project` (String) Financial source for order.
 - `lifetime` (Number) Order lifetime in days (2, 7, 14, 30)
 
 ### Read-Only

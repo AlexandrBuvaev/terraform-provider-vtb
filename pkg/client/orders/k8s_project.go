@@ -1,10 +1,10 @@
 package orders
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
-	"reflect"
 	"strings"
 
 	"terraform-provider-vtb/pkg/client/auth"
@@ -31,6 +31,10 @@ type K8sProjectOrder struct {
 
 func (o *K8sProjectOrder) GetAttrs() interface{} {
 	return o.Attrs
+}
+
+func (o *K8sProjectOrder) GetOrderID() string {
+	return o.Order.ID
 }
 
 func NewK8sProjectOrder(
@@ -160,6 +164,7 @@ func (o *K8sProjectOrder) UpdateK8sProject(
 }
 
 func (o *K8sProjectOrder) K8sProjectAddFullComponent(
+	ctx context.Context,
 	planComponent any,
 	component string,
 ) error {
@@ -180,6 +185,7 @@ func (o *K8sProjectOrder) K8sProjectAddFullComponent(
 }
 
 func (o *K8sProjectOrder) K8sProjectUpdateFullComponent(
+	ctx context.Context,
 	roles []entities.RolesK8sProject,
 	component string,
 ) error {
@@ -191,6 +197,7 @@ func (o *K8sProjectOrder) K8sProjectUpdateFullComponent(
 }
 
 func (o *K8sProjectOrder) K8sProjectAddOmniCertificate(
+	ctx context.Context,
 	appName,
 	certName,
 	component string,
@@ -204,7 +211,7 @@ func (o *K8sProjectOrder) K8sProjectAddOmniCertificate(
 	return o.sendK8sProjectRequest(component, "add", data)
 }
 
-func (o *K8sProjectOrder) K8sProjectDeleteOmniCertificate(name, component string) error {
+func (o *K8sProjectOrder) K8sProjectDeleteOmniCertificate(ctx context.Context, name, component string) error {
 
 	data, _ := o.prepareBaseData()
 	data["order"].(map[string]interface{})["attrs"].(map[string]interface{})["name"] = name
@@ -212,14 +219,14 @@ func (o *K8sProjectOrder) K8sProjectDeleteOmniCertificate(name, component string
 	return o.sendK8sProjectRequest(component, "delete", data)
 }
 
-func (o *K8sProjectOrder) K8sProjectAddComponent(component string) error {
+func (o *K8sProjectOrder) K8sProjectAddComponent(ctx context.Context, component string) error {
 
 	data, _ := o.prepareBaseData()
 
 	return o.sendK8sProjectRequest(component, "add", data)
 }
 
-func (o *K8sProjectOrder) K8sProjectDeleteComponent(component string) error {
+func (o *K8sProjectOrder) K8sProjectDeleteComponent(ctx context.Context, component string) error {
 
 	data, _ := o.prepareBaseData()
 
@@ -270,15 +277,10 @@ func (o *K8sProjectOrder) prepareComponentData(
 	case "istio":
 
 		var controlPlane string
-		val := reflect.ValueOf(planComponent)
-
-		if val.Kind() == reflect.Ptr {
-			val = val.Elem()
-		}
-		field := val.FieldByName("ControlPlane")
-
-		if field.IsValid() && field.Kind() == reflect.String {
-			controlPlane = field.String()
+		if componentData, ok := planComponent.(interface {
+			GetControlPlane() string
+		}); ok {
+			controlPlane = componentData.GetControlPlane()
 		}
 
 		data["order"].(map[string]interface{})["attrs"].(map[string]interface{})["control_plane"] = controlPlane

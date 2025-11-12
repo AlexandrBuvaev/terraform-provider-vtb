@@ -1,0 +1,1 @@
+tofu import vtb_rabbitmq_user.test_user <order_id>/<username>

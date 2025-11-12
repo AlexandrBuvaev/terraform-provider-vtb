@@ -256,7 +256,7 @@ func (o *PostgresqlOrder) GetExtraMount(path string) (*entities.ExtraMount, erro
 	return nil, nil
 }
 
-func (o *PostgresqlOrder) CreateDb(name, adminPass string, dbEncoding *string, dbCustomEncoding bool, connectionLimit int64, async bool) error {
+func (o *PostgresqlOrder) CreateDb(name, adminPass string, dbEncoding *string, connectionLimit int64, async bool) error {
 
 	var uri string
 	var data map[string]interface{}
@@ -274,11 +274,17 @@ func (o *PostgresqlOrder) CreateDb(name, adminPass string, dbEncoding *string, d
 	env := strings.ToLower(itemConfig.Environment)
 
 	attrs := map[string]interface{}{
-		"db_name":            name,
-		"db_admin_pass":      adminPass,
-		"db_encoding":        dbEncoding,
-		"db_custom_encoding": dbCustomEncoding,
-		"conn_limit":         connectionLimit,
+		"db_name":       name,
+		"db_admin_pass": adminPass,
+		"db_encoding":   dbEncoding,
+		//"db_custom_encoding": dbCustomEncoding,
+		"conn_limit": connectionLimit,
+	}
+
+	if dbEncoding == nil {
+		attrs["db_custom_encoding"] = false
+	} else {
+		attrs["db_custom_encoding"] = true
 	}
 
 	data = map[string]interface{}{
@@ -292,11 +298,7 @@ func (o *PostgresqlOrder) CreateDb(name, adminPass string, dbEncoding *string, d
 	if err != nil {
 		return err
 	}
-	if env == "lt" || envType == "prod" {
-		uri = o.generateOrderdActionUri("postgresql_create_db_lt_prod")
-	} else {
-		uri = o.generateOrderdActionUri("postgresql_create_db")
-	}
+	uri = o.generateOrderdActionUri("postgresql_create_db")
 
 	_, err = requests.SendRequest(o.Creds.AccessToken, uri, "PATCH", payload, nil)
 	if err != nil {
@@ -779,6 +781,12 @@ func (o *PostgresqlOrder) AddMountPoint(mountPointPath string) (err error) {
 	if mountPointPath == "/pg_audit" {
 		err = o.AddMountPointPgAudit()
 	}
+	if mountPointPath == "/app/logs" {
+		err = o.AddMountPointAppLogs()
+	}
+	if mountPointPath == "/app/backup" {
+		err = o.AddMountPointAppBackup()
+	}
 	return err
 }
 
@@ -897,6 +905,98 @@ func (o *PostgresqlOrder) AddMountPointPgAudit() (err error) {
 
 	attrs := map[string]interface{}{
 		"mount": "/pg_audit",
+	}
+
+	data := map[string]interface{}{
+		"item_id": item.ID,
+		"order": map[string]interface{}{
+			"attrs": o.addCreatedWithOpenTofuTagToAttrs(attrs),
+		},
+	}
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = requests.SendRequest(o.Creds.AccessToken, uri, "PATCH", payload, nil)
+	if err != nil {
+		return err
+	}
+	err = o.WaitSuccess(10)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (o *PostgresqlOrder) AddMountPointAppLogs() (err error) {
+	if err = o.requiredState("on"); err != nil {
+		return
+	}
+
+	item, err := o.GetParentItem()
+	if err != nil {
+		return err
+	}
+
+	var action string
+	switch item.Type {
+	case "cluster":
+		action = "postgresql_cluster_add_mount_point_app_logs"
+	default:
+		return fmt.Errorf("product_type = %s - does not support this action", item.Type)
+	}
+
+	uri := o.generateOrderdActionUri(action)
+
+	attrs := map[string]interface{}{
+		"mount": "/app/logs",
+	}
+
+	data := map[string]interface{}{
+		"item_id": item.ID,
+		"order": map[string]interface{}{
+			"attrs": o.addCreatedWithOpenTofuTagToAttrs(attrs),
+		},
+	}
+	payload, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	_, err = requests.SendRequest(o.Creds.AccessToken, uri, "PATCH", payload, nil)
+	if err != nil {
+		return err
+	}
+	err = o.WaitSuccess(10)
+	if err != nil {
+		return err
+	}
+	return err
+}
+
+func (o *PostgresqlOrder) AddMountPointAppBackup() (err error) {
+	if err = o.requiredState("on"); err != nil {
+		return
+	}
+
+	item, err := o.GetParentItem()
+	if err != nil {
+		return err
+	}
+
+	var action string
+	switch item.Type {
+	case "cluster":
+		action = "postgresql_cluster_etcd_add_mount_point_app_backup"
+	default:
+		return fmt.Errorf("product_type = %s - does not support this action", item.Type)
+	}
+
+	uri := o.generateOrderdActionUri(action)
+
+	attrs := map[string]interface{}{
+		"mount": "/app/backup",
 	}
 
 	data := map[string]interface{}{

@@ -36,6 +36,7 @@ VTB.Cloud ресурс Kubernetes cluster
 
 ### Optional
 
+- `gslb_only` (Boolean) Балансировка gslb only
 - `lifetime` (Number) Время жизни заказа
 - `products` (Set of String) Список продуктов, для которых разрешено развертывание.
 - `visibility` (Boolean) Флаг для снятия ограничения видимости

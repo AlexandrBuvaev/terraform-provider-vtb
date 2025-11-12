@@ -4,7 +4,7 @@ HOSTNAME=vtb
 NAMESPACE=vtb-cloud
 NAME=vtb
 BINARY=terraform-provider-${NAME}
-VERSION=2.16.0
+VERSION=2.18.0
 OS_ARCH=linux_amd64
 
 default: build

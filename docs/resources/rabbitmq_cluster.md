@@ -144,11 +144,11 @@ Required:
 
 Required:
 
-- `admins` (Set of String)
+- `managers` (Set of String)
 
 Optional:
 
-- `managers` (Set of String)
+- `admins` (Set of String)
 
 ## Import
 

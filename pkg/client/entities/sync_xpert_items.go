@@ -5,16 +5,22 @@ func (c SyncXpertItemConfig) GetProviderType() (string, string) {
 }
 
 type SyncXpertItemConfig struct {
-	Environment      string `json:"environment"`
-	BootstrapServers string `json:"bootstrap_servers"`
-	Certificates     []struct {
-		RestCn          string `json:"rest_cn"`
-		KafkaCn         string `json:"kafka_cn"`
-		RestURI         string `json:"rest_uri"`
-		RestUser        string `json:"rest_user"`
-		RestCreated     string `json:"rest_created"`
-		KafkaCreated    string `json:"kafka_created"`
-		RestExpiration  string `json:"rest_expiration"`
-		KafkaExpiration string `json:"kafka_expiration"`
-	} `json:"certificates"`
+	Environment      string                   `json:"environment"`
+	BootstrapServers string                   `json:"bootstrap_servers"`
+	Certificates     []SyncExpertCertificates `json:"certificates"`
+	ClusterName      string                   `json:"cluster_name"`
+	ConfigTopic      string                   `json:"config_topic"`
+	OffsetTopic      string                   `json:"offset_topic"`
+	StatusTopic      string                   `json:"status_topic"`
+}
+
+type SyncExpertCertificates struct {
+	RestCn          string `json:"rest_cn"`
+	KafkaCn         string `json:"kafka_cn"`
+	RestURI         string `json:"rest_uri"`
+	RestUser        string `json:"rest_user"`
+	RestCreated     string `json:"rest_created"`
+	KafkaCreated    string `json:"kafka_created"`
+	RestExpiration  string `json:"rest_expiration"`
+	KafkaExpiration string `json:"kafka_expiration"`
 }

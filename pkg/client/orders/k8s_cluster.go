@@ -39,6 +39,7 @@ type K8sClusterAttrs struct {
 	Ingress              entities.WorkerIngressK8sCluster  `json:"ingress"`
 	Features             entities.K8sClusterConfigFeatures `json:"features"`
 	CreatedWithOpenTofu  bool                              `json:"created_with_opentofu"`
+	GslbOnly             bool                              `json:"gslb_only"`
 }
 
 type K8sClusterOrder struct {
@@ -184,7 +185,7 @@ func (o *K8sClusterOrder) K8sClusterChangeFlavor(
 
 // add delete
 func (o *K8sClusterOrder) K8sClusterRegionConfigureComponents(
-	region entities.K8sClusterConfigRegions,
+	region entities.K8sConfigRegion,
 	action string,
 ) error {
 
@@ -211,15 +212,15 @@ func (o *K8sClusterOrder) K8sClusterRegionIngressChangeFlavor(
 
 	data, _ := o.prepareBaseData()
 
-	var flavor entities.K8sClusterConfigNodeFlavor
+	var flavor entities.K8sConfigNodeFlavor
 	var name string
 
-	if region, ok := any(component).(entities.K8sClusterConfigRegions); ok {
+	if region, ok := any(component).(entities.K8sConfigRegion); ok {
 		flavor = region.Flavor
 		name = region.Name
 	}
 
-	if ingress, ok := any(component).(entities.K8sClusterConfigIngress); ok {
+	if ingress, ok := any(component).(entities.K8sConfigIngress); ok {
 		flavor = ingress.Flavor
 		name = ingress.Name
 	}
@@ -241,11 +242,11 @@ func (o *K8sClusterOrder) K8sClusterRegionIngressChangeFlavor(
 }
 
 func (o *K8sClusterOrder) K8sClusterIngressSettings(
-	ingress entities.K8sClusterConfigIngress,
+	ingress entities.K8sConfigIngress,
 ) error {
 
 	data, _ := o.prepareBaseData()
-	tcpUdpSettings := make([]entities.K8sClusterConfigIngressTcpUdp, 0)
+	tcpUdpSettings := make([]entities.K8sConfigIngressTcpUdp, 0)
 
 	if len(ingress.TcpUdpSettings) > 0 {
 		tcpUdpSettings = ingress.TcpUdpSettings
@@ -298,8 +299,7 @@ func (o *K8sClusterOrder) K8sClusterConfigureIstioCP(
 	componentData := make(map[string]interface{})
 	componentData["flavor"] = istioCP.Flavor
 	componentData["options"] = map[string]interface{}{
-		"eventrouter":  istioCP.Options.Eventrouter,
-		"mesherizator": false,
+		"eventrouter": istioCP.Options.Eventrouter,
 	}
 
 	if action != "create" {
@@ -338,7 +338,7 @@ func (o *K8sClusterOrder) K8sClusterConfigureIstioOptions(
 }
 
 func (o *K8sClusterOrder) K8sClusterAddRegion(
-	region entities.K8sClusterConfigRegions,
+	region entities.K8sConfigRegion,
 	config CommonActionParams,
 ) error {
 
@@ -348,7 +348,7 @@ func (o *K8sClusterOrder) K8sClusterAddRegion(
 
 	componentData := map[string]interface{}{
 		"availability_zone":      zone,
-		"net_segment":            config.DataCenter,
+		"net_segment":            config.NetSegment,
 		"platform":               config.Platform,
 		"flavor":                 region.Flavor,
 		"iscodes":                region.IsCodes,
@@ -401,7 +401,7 @@ func (o *K8sClusterOrder) K8sClusterConfigureRegionIngress(
 }
 
 func (o *K8sClusterOrder) K8sClusterRegionRequestsRatioConfig(
-	region entities.K8sClusterConfigRegions,
+	region entities.K8sConfigRegion,
 	action string,
 ) error {
 
@@ -426,7 +426,7 @@ func (o *K8sClusterOrder) K8sClusterRegionRequestsRatioConfig(
 }
 
 func (o *K8sClusterOrder) K8sClusterRegionSetCodes(
-	region entities.K8sClusterConfigRegions,
+	region entities.K8sConfigRegion,
 	action string,
 ) error {
 
@@ -447,7 +447,7 @@ func (o *K8sClusterOrder) K8sClusterRegionSetCodes(
 }
 
 func (o *K8sClusterOrder) K8sClusterAddIngress(
-	ingress entities.K8sClusterConfigIngress,
+	ingress entities.K8sConfigIngress,
 	config CommonActionParams,
 ) error {
 
@@ -512,43 +512,57 @@ func (o *K8sClusterOrder) K8sClusterAddNodes(
 	config CommonActionParams,
 	component string,
 ) error {
-
 	regionAddNodesLimit := config.RegionAddNodesMax
 	ingressAddNodesLimit := config.IngressAddNodesMax
 
+	var limit int64
 	switch component {
 	case "region":
-		if newNodesCount > regionAddNodesLimit {
-			newNodesCount = regionAddNodesLimit
-		}
+		limit = regionAddNodesLimit
 	case "ingress":
-		if newNodesCount > ingressAddNodesLimit {
-			newNodesCount = ingressAddNodesLimit
-		}
+		limit = ingressAddNodesLimit
+	default:
+		limit = newNodesCount
 	}
 
 	data, _ := o.prepareBaseData()
 	zone, _ := convertDCtoAZ(config.DataCenter)
 
-	componentData := map[string]interface{}{
-		"availability_zone": zone,
-		"net_segment":       config.NetSegment,
-		"platform":          config.Platform,
-		"name":              componentName,
-		"new_nodes_count":   newNodesCount,
+	remainingNodes := newNodesCount
+
+	for remainingNodes > 0 {
+		currentBatch := limit
+		if remainingNodes < limit {
+			currentBatch = remainingNodes
+		}
+
+		componentData := map[string]interface{}{
+			"availability_zone": zone,
+			"net_segment":       config.NetSegment,
+			"platform":          config.Platform,
+			"name":              componentName,
+			"new_nodes_count":   currentBatch,
+		}
+
+		attrs := data["order"].(map[string]interface{})["attrs"].(map[string]interface{})
+
+		for key, val := range componentData {
+			attrs[key] = val
+		}
+
+		if component == "infra" {
+			attrs["role_name"] = component
+		}
+
+		err := o.sendK8sClusterRequest(fmt.Sprintf("%s_add_nodes", component), data)
+		if err != nil {
+			return fmt.Errorf("failed to add nodes: %v", err)
+		}
+
+		remainingNodes -= currentBatch
 	}
 
-	attrs := data["order"].(map[string]interface{})["attrs"].(map[string]interface{})
-
-	for key, val := range componentData {
-		attrs[key] = val
-	}
-
-	if component == "infra" {
-		attrs["role_name"] = component
-	}
-
-	return o.sendK8sClusterRequest(fmt.Sprintf("%s_add_nodes", component), data)
+	return nil
 }
 
 // all components cluster actions
@@ -573,7 +587,6 @@ func (o *K8sClusterOrder) K8sClusterAddIstio(
 	data, _ := o.prepareBaseData()
 	cpFlavor := istio.ControlPlanes[0].Flavor
 	cpOptions := istio.ControlPlanes[0].Options
-	cpOptions.Mesherizator = false
 
 	componentData := map[string]interface{}{
 		"istio_flavor":          istio.OptionsFlavor,

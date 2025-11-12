@@ -3,12 +3,12 @@
 page_title: "vtb_debezium_image_data Data Source - terraform-provider-vtb"
 subcategory: ""
 description: |-
-  Image data from reference service needed to create order
+  Данные образа из сервиса справочников необходимые для оформления заказа
 ---
 
 # vtb_debezium_image_data (Data Source)
 
-Image data from reference service needed to create order
+Данные образа из сервиса справочников необходимые для оформления заказа
 
 ## Example Usage
 
